@@ -236,7 +236,3 @@ WEBSOCKET_URL=ws://localhost:8080/ws
 
 ---
 
-## Known Sandbox Limitations & Security Note
-
-> [!WARNING]
-> This containerized execution environment is a local portfolio sandbox designed for student demonstration. It applies Docker container boundaries (128MB RAM limit, 1 CPU core limit, disabled container networking, and 5-second process timeout). In production systems, gvisor/Firecracker microVM isolation and strict SECCOMP/AppArmor profiles should be applied.
