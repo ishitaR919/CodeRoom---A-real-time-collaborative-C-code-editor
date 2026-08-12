@@ -221,18 +221,3 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 3. Verify that saved C++ code is restored from PostgreSQL.
 
 ---
-
-## Environment Variables (.env)
-
-```env
-DATABASE_URL=jdbc:postgresql://localhost:5432/collab_editor
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=postgres
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-FRONTEND_URL=http://localhost:3000
-WEBSOCKET_URL=ws://localhost:8080/ws
-```
-
----
-
