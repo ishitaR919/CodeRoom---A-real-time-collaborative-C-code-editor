@@ -65,7 +65,9 @@ export function useCollaboration(roomId: string, user: User | null, initialCode:
     if (!roomId || !user) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8080/ws`;
+    const wsUrl = window.location.port === '3000'
+      ? `${protocol}//${window.location.hostname}:8080/ws`
+      : `${protocol}//${window.location.host}/ws`;
 
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
