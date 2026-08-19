@@ -14,8 +14,8 @@ RUN mvn package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Install Docker CLI tool for Docker-out-of-Docker execution
-RUN apk add --no-cache docker-cli
+# Install Docker CLI tool and GCC (g++) for local compiling options
+RUN apk add --no-cache docker-cli g++
 
 COPY --from=build /app/target/*.jar app.jar
 

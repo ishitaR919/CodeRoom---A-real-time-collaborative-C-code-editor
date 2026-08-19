@@ -25,6 +25,9 @@ public class DockerRunnerService {
     @Value("${app.backend-url:http://localhost:8080}")
     private String backendUrl;
 
+    @Value("${app.runner-mode:docker}")
+    private String runnerMode;
+
     public void executeCodeAndReport(ExecutionEvent event) {
         long startTime = System.currentTimeMillis();
         Path tempDir = null;
@@ -36,15 +39,26 @@ public class DockerRunnerService {
             Files.writeString(sourceFile, event.getCode(), StandardCharsets.UTF_8);
 
             String absPath = tempDir.toAbsolutePath().toString();
+            boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            boolean isLocal = "local".equalsIgnoreCase(runnerMode);
 
             // Step 1: Compilation
-            log.info("Compiling C++ code for executionId: {}", event.getExecutionId());
-            ProcessBuilder compilePb = new ProcessBuilder(
-                    "docker", "run", "--rm",
-                    "-v", absPath + ":/usr/src/app",
-                    "cpp-runner",
-                    "g++", "-O2", "main.cpp", "-o", "main"
-            );
+            ProcessBuilder compilePb;
+            if (isLocal) {
+                log.info("Compiling C++ code locally (host-level) for executionId: {}", event.getExecutionId());
+                String binaryName = isWindows ? "main.exe" : "main";
+                compilePb = new ProcessBuilder(
+                        "g++", "-O2", "main.cpp", "-o", binaryName
+                );
+            } else {
+                log.info("Compiling C++ code in Docker for executionId: {}", event.getExecutionId());
+                compilePb = new ProcessBuilder(
+                        "docker", "run", "--rm",
+                        "-v", absPath + ":/usr/src/app",
+                        "cpp-runner",
+                        "g++", "-O2", "main.cpp", "-o", "main"
+                );
+            }
             compilePb.directory(tempDir.toFile());
 
             Process compileProcess = compilePb.start();
@@ -72,17 +86,24 @@ public class DockerRunnerService {
                 return;
             }
 
-            // Step 2: Execution inside safe Docker sandbox
-            log.info("Executing compiled binary for executionId: {}", event.getExecutionId());
-            ProcessBuilder runPb = new ProcessBuilder(
-                    "docker", "run", "--rm",
-                    "-v", absPath + ":/usr/src/app",
-                    "-m", "128m",
-                    "--cpus", "1.0",
-                    "--network", "none",
-                    "cpp-runner",
-                    "./main"
-            );
+            // Step 2: Execution inside safe Docker sandbox (or local if configured)
+            ProcessBuilder runPb;
+            if (isLocal) {
+                log.info("Executing compiled binary locally (host-level) for executionId: {}", event.getExecutionId());
+                String executablePath = isWindows ? "main.exe" : "./main";
+                runPb = new ProcessBuilder(executablePath);
+            } else {
+                log.info("Executing compiled binary inside safe Docker sandbox for executionId: {}", event.getExecutionId());
+                runPb = new ProcessBuilder(
+                        "docker", "run", "--rm",
+                        "-v", absPath + ":/usr/src/app",
+                        "-m", "128m",
+                        "--cpus", "1.0",
+                        "--network", "none",
+                        "cpp-runner",
+                        "./main"
+                );
+            }
             runPb.directory(tempDir.toFile());
 
             long execStartTime = System.currentTimeMillis();
